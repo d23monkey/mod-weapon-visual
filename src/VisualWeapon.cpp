@@ -195,7 +195,10 @@ public:
 class VisualWeaponPlayer : public PlayerScript
 {
 public:
-    VisualWeaponPlayer() : PlayerScript("VisualWeaponPlayer")
+    VisualWeaponPlayer() : PlayerScript("VisualWeaponPlayer", {
+		PLAYERHOOK_ON_EQUIP,
+		PLAYERHOOK_ON_LOGIN
+        })
     {
         // Delete unused rows from DB table
         CharacterDatabase.Execute("DELETE FROM `mod_weapon_visual_effect` WHERE NOT EXISTS(SELECT 1 FROM item_instance WHERE `mod_weapon_visual_effect`.item_guid = item_instance.guid)");
@@ -235,24 +238,32 @@ public:
     }
 
     // if Player has item in bag and re-equip it lets check for enchant
-    void OnEquip(Player* player, Item* /*item*/, uint8 /*bag*/, uint8 /*slot*/, bool /*update*/) override
+    void OnPlayerEquip(Player* player, Item* /*item*/, uint8 /*bag*/, uint8 /*slot*/, bool /*update*/) override
     {
         GetVisual(player);
     }
 
-    void OnLogin(Player* player) override
+    void OnPlayerLogin(Player* player) override
     {
         GetVisual(player);
 
-        if(sConfigMgr->GetOption<bool>("VisualWeapon.AnnounceEnable", true))
-            ChatHandler(player->GetSession()).SendSysMessage("本服务器正在运行 |cff4CFF00武器幻光|r 模块.");
+        if (sConfigMgr->GetOption<bool>("VisualWeapon.AnnounceEnable", true))
+        {
+			uint32 loc = player->GetSession()->GetSessionDbLocaleIndex();
+            if (loc == 4)
+                ChatHandler(player->GetSession()).SendSysMessage("|cff00ff00本服务端已加载|r |cff00ccff武器幻光|r |cff00ff00模块.|r");
+            else
+				ChatHandler(player->GetSession()).SendSysMessage("This server is running the |cff4CFF00VisualWeapon|r module.");
+        }
     }
 };
 
 class VisualWeaponWorld : public WorldScript
 {
 public:
-    VisualWeaponWorld() : WorldScript("VisualWeaponWorld") {}
+    VisualWeaponWorld() : WorldScript("VisualWeaponWorld", {
+		WORLDHOOK_ON_STARTUP
+        }) {}
 
     void OnStartup() override
     {
